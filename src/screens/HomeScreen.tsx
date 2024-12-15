@@ -21,6 +21,26 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
         setSelectedDate(day.dateString);
     };
 
+    // Генерация объекта для `markedDates`
+    const getMarkedDates = () => {
+        const marked: { [key: string]: any } = {};
+        events.forEach((event) => {
+            if (!marked[event.date]) {
+                marked[event.date] = { marked: true, dotColor: 'red' };
+            }
+        });
+
+        if (selectedDate) {
+            marked[selectedDate] = {
+                ...(marked[selectedDate] || {}),
+                selected: true,
+                selectedColor: 'blue',
+            };
+        }
+
+        return marked;
+    };
+
     const eventsForSelectedDate = events.filter(
         (event) => event.date === selectedDate
     );
@@ -29,9 +49,7 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
         <View style={styles.container}>
             <Calendar
                 onDayPress={handleDayPress}
-                markedDates={{
-                    [selectedDate]: { selected: true, selectedColor: 'blue' },
-                }}
+                markedDates={getMarkedDates()} // Используем `markedDates`
             />
 
             <FlatList
