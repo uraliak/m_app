@@ -1,3 +1,4 @@
+// src/App.tsx
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -14,8 +15,8 @@ export default function App() {
             <Stack.Navigator initialRouteName="Welcome">
                 <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ title: 'Приветствие' }} />
                 <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Мои события' }} />
-                <Stack.Screen name="EventForm" component={EventFormScreen} options={{ title: 'Форма события' }} />
-                <Stack.Screen name="About" component={AboutScreen} options={{ title: 'О приложении' }} />
+                <Stack.Screen name="EventFormScreen" component={EventFormScreen} options={{ title: 'Добавить событие' }} />
+                <Stack.Screen name="About" component={AboutScreen} />
             </Stack.Navigator>
         </NavigationContainer>
     );

@@ -1,60 +1,64 @@
 // src/screens/HomeScreen.tsx
-import React, { useState } from 'react';
-import { View, Text, FlatList, Button, StyleSheet } from 'react-native';
-import dayjs from 'dayjs';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Button, FlatList } from 'react-native';
+import { Calendar } from 'react-native-calendars';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-interface Event {
-    id: string;
-    datetime: string;
-    duration?: string;
-    type: string;
-    comment?: string;
-}
+const HomeScreen = () => {
+    const [events, setEvents] = useState([]);
+    const [selectedDate, setSelectedDate] = useState('');
 
-const HomeScreen = ({ navigation }: any) => {
-    const [events, setEvents] = useState<Event[]>([
-        {
-            id: '1',
-            datetime: dayjs().format('YYYY-MM-DD HH:mm'),
-            type: 'Встреча с клиентом',
-            comment: 'Обсудить новый объект',
-        },
-    ]);
+    useEffect(() => {
+        const loadEvents = async () => {
+            try {
+                const storedEvents = await AsyncStorage.getItem('events');
+                if (storedEvents) {
+                    setEvents(JSON.parse(storedEvents));
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке событий:', error);
+            }
+        };
+        loadEvents();
+    }, []);
 
-    const deleteEvent = (id: string) => {
-        setEvents(events.filter(event => event.id !== id));
+    const handleDayPress = (day: any) => {
+        setSelectedDate(day.dateString);
     };
 
-    const editEvent = (event: Event) => {
-        navigation.navigate('EventForm', { event, setEvents });
-    };
-
-    const renderEvent = ({ item }: { item: Event }) => (
-        <View style={styles.eventCard}>
-            <Text style={styles.eventText}>Тип: {item.type}</Text>
-            <Text style={styles.eventText}>Дата-время: {item.datetime}</Text>
-            {item.comment && <Text style={styles.eventText}>Комментарий: {item.comment}</Text>}
-            <Button title="Удалить" onPress={() => deleteEvent(item.id)} color="red" />
-            <Button title="Редактировать" onPress={() => editEvent(item)} />
-        </View>
+    const eventsForSelectedDay = events.filter(
+        (event: any) => event.datetime.startsWith(selectedDate)
     );
 
     return (
         <View style={styles.container}>
-            <FlatList
-                data={events}
-                keyExtractor={item => item.id}
-                renderItem={renderEvent}
+            <Calendar
+                onDayPress={handleDayPress}
+                markedDates={{
+                    [selectedDate]: { selected: true, selectedColor: 'blue' }
+                }}
             />
-            <Button title="Добавить событие" onPress={() => navigation.navigate('EventForm', { setEvents })} />
+
+            <FlatList
+                data={eventsForSelectedDay}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                    <View style={styles.event}>
+                        <Text>{item.type}</Text>
+                        <Text>{item.datetime}</Text>
+                        <Text>{item.comment}</Text>
+                    </View>
+                )}
+            />
+
+            <Button title="Добавить событие" onPress={() => navigation.navigate('EventFormScreen')} />
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: { flex: 1, padding: 16 },
-    eventCard: { marginBottom: 16, padding: 16, backgroundColor: '#f9f9f9', borderRadius: 8 },
-    eventText: { fontSize: 16, marginBottom: 8 },
+    event: { marginBottom: 16 },
 });
 
 export default HomeScreen;
