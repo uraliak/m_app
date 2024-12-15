@@ -1,5 +1,6 @@
+// src/screens/HomeScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, FlatList, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, FlatList, Button, StyleSheet } from 'react-native';
 import dayjs from 'dayjs';
 
 interface Event {
@@ -24,12 +25,17 @@ const HomeScreen = ({ navigation }: any) => {
         setEvents(events.filter(event => event.id !== id));
     };
 
+    const editEvent = (event: Event) => {
+        navigation.navigate('EventForm', { event, setEvents });
+    };
+
     const renderEvent = ({ item }: { item: Event }) => (
         <View style={styles.eventCard}>
             <Text style={styles.eventText}>Тип: {item.type}</Text>
             <Text style={styles.eventText}>Дата-время: {item.datetime}</Text>
             {item.comment && <Text style={styles.eventText}>Комментарий: {item.comment}</Text>}
             <Button title="Удалить" onPress={() => deleteEvent(item.id)} color="red" />
+            <Button title="Редактировать" onPress={() => editEvent(item)} />
         </View>
     );
 

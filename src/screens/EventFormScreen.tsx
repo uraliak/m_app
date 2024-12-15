@@ -1,36 +1,86 @@
-import React, { useState } from 'react';
+// src/screens/EventFormScreen.tsx
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 
 const EventFormScreen = ({ route, navigation }: any) => {
-    const { setEvents } = route.params;
-    const [datetime, setDatetime] = useState(dayjs().format('YYYY-MM-DD HH:mm'));
-    const [type, setType] = useState('');
-    const [comment, setComment] = useState('');
+    const { setEvents, event } = route.params || {};
+    const [date, setDate] = useState(event ? new Date(event.datetime) : new Date());
+    const [time, setTime] = useState(event ? dayjs(event.datetime).format('HH:mm') : '12:00');
+    const [type, setType] = useState(event ? event.type : '');
+    const [comment, setComment] = useState(event ? event.comment : '');
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showTimePicker, setShowTimePicker] = useState(false);
+
+    useEffect(() => {
+        if (event) {
+            setDate(new Date(event.datetime));
+            setTime(dayjs(event.datetime).format('HH:mm'));
+            setType(event.type);
+            setComment(event.comment);
+        }
+    }, [event]);
 
     const handleSubmit = () => {
-        if (!datetime || !type) {
-            Alert.alert('Ошибка', 'Дата-время и тип события обязательны');
+        if (!date || !time || !type) {
+            Alert.alert('Ошибка', 'Дата, время и тип события обязательны');
             return;
         }
 
-        setEvents((prev: any) => [
-            ...prev,
-            { id: Date.now().toString(), datetime, type, comment },
-        ]);
+        const datetime = dayjs(`${dayjs(date).format('YYYY-MM-DD')} ${time}`).format();
+        const newEvent = { id: event ? event.id : Date.now().toString(), datetime, type, comment };
+
+        if (event) {
+            setEvents((prev: any) =>
+                prev.map((ev: Event) => (ev.id === event.id ? newEvent : ev))
+            );
+        } else {
+            setEvents((prev: any) => [...prev, newEvent]);
+        }
+
         navigation.goBack();
+    };
+
+    const handleDateChange = (event: any, selectedDate: Date | undefined) => {
+        setShowDatePicker(false);
+        if (selectedDate) {
+            setDate(selectedDate);
+        }
+    };
+
+    const handleTimeChange = (event: any, selectedTime: Date | undefined) => {
+        setShowTimePicker(false);
+        if (selectedTime) {
+            setTime(dayjs(selectedTime).format('HH:mm'));
+        }
     };
 
     return (
         <View style={styles.container}>
-            <Text style={styles.label}>Дата-время:</Text>
-            <TextInput
-                style={styles.input}
-                value={datetime}
-                onChangeText={setDatetime}
-                placeholder="Введите дату и время"
-            />
+            <Text style={styles.label}>Дата:</Text>
+            <Button title={`Выбрать дату (${dayjs(date).format('DD.MM.YYYY')})`} onPress={() => setShowDatePicker(true)} />
+            {showDatePicker && (
+                <DateTimePicker
+                    value={date}
+                    mode="date"
+                    display="default"
+                    onChange={handleDateChange}
+                />
+            )}
+
+            <Text style={styles.label}>Время:</Text>
+            <Button title={`Выбрать время (${time})`} onPress={() => setShowTimePicker(true)} />
+            {showTimePicker && (
+                <DateTimePicker
+                    value={new Date(`${dayjs(date).format('YYYY-MM-DD')}T${time}:00`) }
+                    mode="time"
+                    display="default"
+                    onChange={handleTimeChange}
+                />
+            )}
+
             <Text style={styles.label}>Тип события:</Text>
             <Picker selectedValue={type} onValueChange={setType} style={styles.input}>
                 <Picker.Item label="Выберите тип события" value="" />
@@ -38,6 +88,7 @@ const EventFormScreen = ({ route, navigation }: any) => {
                 <Picker.Item label="Показ" value="Показ" />
                 <Picker.Item label="Запланированный звонок" value="Запланированный звонок" />
             </Picker>
+
             <Text style={styles.label}>Комментарий:</Text>
             <TextInput
                 style={styles.input}
@@ -45,7 +96,8 @@ const EventFormScreen = ({ route, navigation }: any) => {
                 onChangeText={setComment}
                 placeholder="Введите комментарий"
             />
-            <Button title="Сохранить" onPress={handleSubmit} />
+
+            <Button title={event ? "Сохранить изменения" : "Сохранить"} onPress={handleSubmit} />
         </View>
     );
 };
