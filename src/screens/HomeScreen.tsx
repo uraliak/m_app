@@ -1,22 +1,17 @@
-// src/screens/HomeScreen.tsx
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Button, FlatList } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const HomeScreen = () => {
-    const [events, setEvents] = useState([]);
+const HomeScreen = ({ navigation }: { navigation: any }) => {
+    const [events, setEvents] = useState<any[]>([]);
     const [selectedDate, setSelectedDate] = useState('');
 
     useEffect(() => {
         const loadEvents = async () => {
-            try {
-                const storedEvents = await AsyncStorage.getItem('events');
-                if (storedEvents) {
-                    setEvents(JSON.parse(storedEvents));
-                }
-            } catch (error) {
-                console.error('Ошибка при загрузке событий:', error);
+            const storedEvents = await AsyncStorage.getItem('events');
+            if (storedEvents) {
+                setEvents(JSON.parse(storedEvents));
             }
         };
         loadEvents();
@@ -26,8 +21,8 @@ const HomeScreen = () => {
         setSelectedDate(day.dateString);
     };
 
-    const eventsForSelectedDay = events.filter(
-        (event: any) => event.datetime.startsWith(selectedDate)
+    const eventsForSelectedDate = events.filter(
+        (event) => event.date === selectedDate
     );
 
     return (
@@ -35,23 +30,28 @@ const HomeScreen = () => {
             <Calendar
                 onDayPress={handleDayPress}
                 markedDates={{
-                    [selectedDate]: { selected: true, selectedColor: 'blue' }
+                    [selectedDate]: { selected: true, selectedColor: 'blue' },
                 }}
             />
 
             <FlatList
-                data={eventsForSelectedDay}
+                data={eventsForSelectedDate}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <View style={styles.event}>
                         <Text>{item.type}</Text>
-                        <Text>{item.datetime}</Text>
+                        <Text>{item.time}</Text>
                         <Text>{item.comment}</Text>
                     </View>
                 )}
             />
 
-            <Button title="Добавить событие" onPress={() => navigation.navigate('EventFormScreen')} />
+            <Button
+                title="Добавить событие"
+                onPress={() =>
+                    navigation.navigate('EventForm', { setEvents })
+                }
+            />
         </View>
     );
 };

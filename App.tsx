@@ -15,7 +15,7 @@ export default function App() {
             <Stack.Navigator initialRouteName="Welcome">
                 <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ title: 'Приветствие' }} />
                 <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Мои события' }} />
-                <Stack.Screen name="EventFormScreen" component={EventFormScreen} options={{ title: 'Добавить событие' }} />
+                <Stack.Screen name="EventForm" component={EventFormScreen} options={{ title: 'Добавить событие' }} />
                 <Stack.Screen name="About" component={AboutScreen} />
             </Stack.Navigator>
         </NavigationContainer>
