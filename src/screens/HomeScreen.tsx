@@ -21,7 +21,6 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
         setSelectedDate(day.dateString);
     };
 
-    // Генерация объекта для `markedDates`
     const getMarkedDates = () => {
         const marked: { [key: string]: any } = {};
         events.forEach((event) => {
@@ -41,15 +40,19 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
         return marked;
     };
 
-    const eventsForSelectedDate = events.filter(
-        (event) => event.date === selectedDate
-    );
+    const eventsForSelectedDate = events
+        .filter((event) => event.date === selectedDate)
+        .sort((a, b) => {
+            const timeA = a.time.split(':').map(Number);
+            const timeB = b.time.split(':').map(Number);
+            return timeA[0] - timeB[0] || timeA[1] - timeB[1];
+        });
 
     return (
         <View style={styles.container}>
             <Calendar
                 onDayPress={handleDayPress}
-                markedDates={getMarkedDates()} // Используем `markedDates`
+                markedDates={getMarkedDates()}
             />
 
             <FlatList
