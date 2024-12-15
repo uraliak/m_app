@@ -13,6 +13,7 @@ const EventFormScreen = ({ navigation, route }: { navigation: any; route: any })
     const [comment, setComment] = useState(eventToEdit?.comment || '');
 
     useEffect(() => {
+        // Если дата некорректна, установить текущую дату
         if (isNaN(date?.getTime() || 0)) {
             setDate(new Date());
         }
@@ -25,7 +26,7 @@ const EventFormScreen = ({ navigation, route }: { navigation: any; route: any })
         }
 
         const newEvent = {
-            id: eventToEdit?.id || Date.now().toString(),
+            id: eventToEdit?.id || Date.now().toString(),  // Используем существующий id, если редактируем
             date: date.toISOString().split('T')[0],
             time,
             type,
@@ -50,7 +51,7 @@ const EventFormScreen = ({ navigation, route }: { navigation: any; route: any })
                 setEvents(updatedEvents);
             }
 
-            navigation.goBack();
+            navigation.goBack();  // Возвращаемся назад после сохранения
         } catch (error) {
             Alert.alert('Ошибка', 'Не удалось сохранить событие.');
         }
