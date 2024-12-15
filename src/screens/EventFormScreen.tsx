@@ -1,19 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, Modal, Platform } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Picker } from '@react-native-picker/picker';  // Импортируйте Picker
 
 const EventFormScreen = ({ navigation, route }: { navigation: any; route: any }) => {
-    const { setEvents, defaultDate, eventToEdit } = route.params || {};
-
+    const { eventToEdit, defaultDate } = route.params || {};
     const [date, setDate] = useState<Date | null>(
         eventToEdit ? new Date(eventToEdit.date) : new Date(defaultDate || Date.now())
     );
     const [time, setTime] = useState(eventToEdit?.time || '');
     const [type, setType] = useState(eventToEdit?.type || '');
     const [comment, setComment] = useState(eventToEdit?.comment || '');
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showTimePicker, setShowTimePicker] = useState(false);
+
+    // Используем useEffect для обновления параметров экрана
+    useEffect(() => {
+        navigation.setOptions({
+            headerRight: () => (
+                <Button
+                    title="Сохранить"
+                    onPress={saveEvent}
+                />
+            ),
+        });
+    }, [navigation]);
 
     useEffect(() => {
-        // Если дата некорректна, установить текущую дату
         if (isNaN(date?.getTime() || 0)) {
             setDate(new Date());
         }
@@ -26,7 +40,7 @@ const EventFormScreen = ({ navigation, route }: { navigation: any; route: any })
         }
 
         const newEvent = {
-            id: eventToEdit?.id || Date.now().toString(),  // Используем существующий id, если редактируем
+            id: eventToEdit?.id || Date.now().toString(),
             date: date.toISOString().split('T')[0],
             time,
             type,
@@ -38,22 +52,32 @@ const EventFormScreen = ({ navigation, route }: { navigation: any; route: any })
             const events = storedEvents ? JSON.parse(storedEvents) : [];
 
             if (eventToEdit) {
-                // Редактирование события
                 const updatedEvents = events.map((event: any) =>
                     event.id === eventToEdit.id ? newEvent : event
                 );
                 await AsyncStorage.setItem('events', JSON.stringify(updatedEvents));
-                setEvents(updatedEvents);
+                navigation.goBack();
             } else {
-                // Создание нового события
                 const updatedEvents = [...events, newEvent];
                 await AsyncStorage.setItem('events', JSON.stringify(updatedEvents));
-                setEvents(updatedEvents);
+                navigation.goBack();
             }
-
-            navigation.goBack();  // Возвращаемся назад после сохранения
         } catch (error) {
             Alert.alert('Ошибка', 'Не удалось сохранить событие.');
+        }
+    };
+
+    const handleDateChange = (event: any, selectedDate: Date | undefined) => {
+        setShowDatePicker(false);
+        if (selectedDate) {
+            setDate(selectedDate);
+        }
+    };
+
+    const handleTimeChange = (event: any, selectedTime: Date | undefined) => {
+        setShowTimePicker(false);
+        if (selectedTime) {
+            setTime(selectedTime.toLocaleTimeString());
         }
     };
 
@@ -62,34 +86,44 @@ const EventFormScreen = ({ navigation, route }: { navigation: any; route: any })
             <Text style={styles.label}>Дата</Text>
             <Button
                 title={date ? date.toISOString().split('T')[0] : 'Выберите дату'}
-                onPress={() => {
-                    const newDate = prompt('Введите дату (в формате YYYY-MM-DD):');
-                    if (newDate) {
-                        const parsedDate = new Date(newDate);
-                        if (!isNaN(parsedDate.getTime())) {
-                            setDate(parsedDate);
-                        } else {
-                            Alert.alert('Ошибка', 'Некорректная дата.');
-                        }
-                    }
-                }}
+                onPress={() => setShowDatePicker(true)}
             />
+            {showDatePicker && (
+                <DateTimePicker
+                    value={date || new Date()}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={handleDateChange}
+                />
+            )}
 
             <Text style={styles.label}>Время</Text>
-            <TextInput
-                style={styles.input}
-                value={time}
-                onChangeText={setTime}
-                placeholder="Введите время (например, 14:00)"
+            <Button
+                title={time || 'Выберите время'}
+                onPress={() => setShowTimePicker(true)}
             />
+            {showTimePicker && (
+                <DateTimePicker
+                    value={date || new Date()}
+                    mode="time"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={handleTimeChange}
+                />
+            )}
 
             <Text style={styles.label}>Тип события</Text>
-            <TextInput
-                style={styles.input}
-                value={type}
-                onChangeText={setType}
-                placeholder="Введите тип события"
-            />
+            <View style={styles.pickerContainer}>
+                <Picker
+                    selectedValue={type}
+                    onValueChange={(itemValue) => setType(itemValue)}
+                    style={styles.picker}
+                >
+                    <Picker.Item label="Выберите тип события" value="" />
+                    <Picker.Item label="Встреча с клиентом" value="meeting" />
+                    <Picker.Item label="Показ" value="show" />
+                    <Picker.Item label="Запланированный звонок" value="call" />
+                </Picker>
+            </View>
 
             <Text style={styles.label}>Комментарий</Text>
             <TextInput
@@ -98,8 +132,6 @@ const EventFormScreen = ({ navigation, route }: { navigation: any; route: any })
                 onChangeText={setComment}
                 placeholder="Введите комментарий (необязательно)"
             />
-
-            <Button title="Сохранить событие" onPress={saveEvent} />
         </View>
     );
 };
@@ -113,6 +145,16 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         padding: 8,
         marginTop: 8,
+    },
+    pickerContainer: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 4,
+        marginTop: 8,
+    },
+    picker: {
+        height: 50,
+        width: '100%',
     },
 });
 
