@@ -1,136 +1,119 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, Modal, Platform } from 'react-native';
+import React, { useState } from 'react';
+import {
+    View,
+    Text,
+    TextInput,
+    Button,
+    StyleSheet,
+    Alert,
+    Platform
+} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Picker } from '@react-native-picker/picker';  // Импортируйте Picker
 
 const EventFormScreen = ({ navigation, route }: { navigation: any; route: any }) => {
-    const { eventToEdit, defaultDate } = route.params || {};
-    const [date, setDate] = useState<Date | null>(
-        eventToEdit ? new Date(eventToEdit.date) : new Date(defaultDate || Date.now())
-    );
-    const [time, setTime] = useState(eventToEdit?.time || '');
-    const [type, setType] = useState(eventToEdit?.type || '');
-    const [comment, setComment] = useState(eventToEdit?.comment || '');
+    const { event, setEvents, defaultDate } = route.params || {};
+    const [date, setDate] = useState(event ? new Date(event.date) : new Date(defaultDate));
+    const [time, setTime] = useState(event ? new Date(event.time) : new Date());
+    const [type, setType] = useState(event ? event.type : '');
+    const [comment, setComment] = useState(event ? event.comment : '');
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
 
-    // Используем useEffect для обновления параметров экрана
-    useEffect(() => {
-        navigation.setOptions({
-            headerRight: () => (
-                <Button
-                    title="Сохранить"
-                    onPress={saveEvent}
-                />
-            ),
-        });
-    }, [navigation]);
-
-    useEffect(() => {
-        if (isNaN(date?.getTime() || 0)) {
-            setDate(new Date());
-        }
-    }, [date]);
-
-    const saveEvent = async () => {
-        if (!date || !time || !type) {
-            Alert.alert('Ошибка', 'Пожалуйста, заполните все поля.');
+    const handleSaveEvent = async () => {
+        if (!type) {
+            Alert.alert('Ошибка', 'Тип события обязателен.');
             return;
         }
 
         const newEvent = {
-            id: eventToEdit?.id || Date.now().toString(),
-            date: date.toISOString().split('T')[0],
-            time,
+            id: event ? event.id : Date.now().toString(),
+            date: date.toISOString().split('T')[0], // Только дата
+            time: time.toISOString().split('T')[1].substring(0, 5), // Только время
             type,
             comment,
         };
 
-        try {
-            const storedEvents = await AsyncStorage.getItem('events');
-            const events = storedEvents ? JSON.parse(storedEvents) : [];
+        const storedEvents = (await AsyncStorage.getItem('events')) || '[]';
+        const parsedEvents = JSON.parse(storedEvents);
 
-            if (eventToEdit) {
-                const updatedEvents = events.map((event: any) =>
-                    event.id === eventToEdit.id ? newEvent : event
-                );
-                await AsyncStorage.setItem('events', JSON.stringify(updatedEvents));
-                navigation.goBack();
-            } else {
-                const updatedEvents = [...events, newEvent];
-                await AsyncStorage.setItem('events', JSON.stringify(updatedEvents));
-                navigation.goBack();
-            }
-        } catch (error) {
-            Alert.alert('Ошибка', 'Не удалось сохранить событие.');
+        if (event) {
+            // Обновление события
+            const updatedEvents = parsedEvents.map((ev: any) =>
+                ev.id === event.id ? newEvent : ev
+            );
+            await AsyncStorage.setItem('events', JSON.stringify(updatedEvents));
+            setEvents(updatedEvents);
+        } else {
+            // Новое событие
+            const updatedEvents = [...parsedEvents, newEvent];
+            await AsyncStorage.setItem('events', JSON.stringify(updatedEvents));
+            setEvents(updatedEvents);
         }
-    };
 
-    const handleDateChange = (event: any, selectedDate: Date | undefined) => {
-        setShowDatePicker(false);
-        if (selectedDate) {
-            setDate(selectedDate);
-        }
-    };
-
-    const handleTimeChange = (event: any, selectedTime: Date | undefined) => {
-        setShowTimePicker(false);
-        if (selectedTime) {
-            setTime(selectedTime.toLocaleTimeString());
-        }
+        navigation.goBack();
     };
 
     return (
         <View style={styles.container}>
-            <Text style={styles.label}>Дата</Text>
+            <Text style={styles.label}>Дата события:</Text>
             <Button
-                title={date ? date.toISOString().split('T')[0] : 'Выберите дату'}
+                title={date.toISOString().split('T')[0]}
                 onPress={() => setShowDatePicker(true)}
             />
             {showDatePicker && (
                 <DateTimePicker
-                    value={date || new Date()}
+                    value={date}
                     mode="date"
                     display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={handleDateChange}
+                    onChange={(event, selectedDate) => {
+                        setShowDatePicker(false);
+                        if (selectedDate) setDate(selectedDate);
+                    }}
                 />
             )}
 
-            <Text style={styles.label}>Время</Text>
+            <Text style={styles.label}>Время события:</Text>
             <Button
-                title={time || 'Выберите время'}
+                title={time.toISOString().split('T')[1].substring(0, 5)}
                 onPress={() => setShowTimePicker(true)}
             />
             {showTimePicker && (
                 <DateTimePicker
-                    value={date || new Date()}
+                    value={time}
                     mode="time"
                     display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={handleTimeChange}
+                    onChange={(event, selectedTime) => {
+                        setShowTimePicker(false);
+                        if (selectedTime) setTime(selectedTime);
+                    }}
                 />
             )}
 
-            <Text style={styles.label}>Тип события</Text>
-            <View style={styles.pickerContainer}>
-                <Picker
-                    selectedValue={type}
-                    onValueChange={(itemValue) => setType(itemValue)}
-                    style={styles.picker}
-                >
-                    <Picker.Item label="Выберите тип события" value="" />
-                    <Picker.Item label="Встреча с клиентом" value="meeting" />
-                    <Picker.Item label="Показ" value="show" />
-                    <Picker.Item label="Запланированный звонок" value="call" />
-                </Picker>
-            </View>
+            <Text style={styles.label}>Тип события:</Text>
+            <Picker
+                selectedValue={type}
+                onValueChange={(itemValue) => setType(itemValue)}
+                style={styles.input}
+            >
+                <Picker.Item label="Выберите тип события" value="" />
+                <Picker.Item label="Встреча с клиентом" value="Встреча с клиентом" />
+                <Picker.Item label="Показ" value="Показ" />
+                <Picker.Item label="Запланированный звонок" value="Запланированный звонок" />
+            </Picker>
 
-            <Text style={styles.label}>Комментарий</Text>
+            <Text style={styles.label}>Комментарий:</Text>
             <TextInput
                 style={styles.input}
                 value={comment}
                 onChangeText={setComment}
-                placeholder="Введите комментарий (необязательно)"
+                placeholder="Введите комментарий"
+            />
+
+            <Button
+                title={event ? 'Сохранить изменения' : 'Сохранить'}
+                onPress={handleSaveEvent}
             />
         </View>
     );
@@ -138,24 +121,8 @@ const EventFormScreen = ({ navigation, route }: { navigation: any; route: any })
 
 const styles = StyleSheet.create({
     container: { flex: 1, padding: 16 },
-    label: { fontSize: 16, fontWeight: 'bold', marginTop: 16 },
-    input: {
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 4,
-        padding: 8,
-        marginTop: 8,
-    },
-    pickerContainer: {
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 4,
-        marginTop: 8,
-    },
-    picker: {
-        height: 50,
-        width: '100%',
-    },
+    label: { fontSize: 16, marginBottom: 8 },
+    input: { borderWidth: 1, borderColor: '#ccc', padding: 8, borderRadius: 8, marginBottom: 16 },
 });
 
 export default EventFormScreen;
