@@ -13,8 +13,8 @@ import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const EventFormScreen = ({ navigation, route }: { navigation: any; route: any }) => {
-    const { event, setEvents } = route.params || {};
-    const [date, setDate] = useState(event ? new Date(event.date) : new Date());
+    const { event, setEvents, defaultDate } = route.params || {};
+    const [date, setDate] = useState(event ? new Date(event.date) : new Date(defaultDate));
     const [time, setTime] = useState(event ? new Date(event.time) : new Date());
     const [type, setType] = useState(event ? event.type : '');
     const [comment, setComment] = useState(event ? event.comment : '');

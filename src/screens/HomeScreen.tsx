@@ -49,7 +49,10 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
             <Button
                 title="Добавить событие"
                 onPress={() =>
-                    navigation.navigate('EventForm', { setEvents })
+                    navigation.navigate('EventForm', {
+                        setEvents,
+                        defaultDate: selectedDate || new Date().toISOString().split('T')[0],
+                    })
                 }
             />
         </View>
