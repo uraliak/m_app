@@ -14,19 +14,32 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const EventFormScreen = ({ navigation, route }: { navigation: any; route: any }) => {
     const { event, setEvents, defaultDate } = route.params || {};
+    console.log(event);
+    console.log(route.params);
+    console.log(event ? new Date(event.date) : new Date(defaultDate));
+    console.log("time", new Date(event.time));
     const [date, setDate] = useState(event ? new Date(event.date) : new Date(defaultDate));
-    const [time, setTime] = useState(event ? new Date(event.time) : new Date());
+    const [time, setTime] = useState(() => {
+        if (event) {
+            const [hours, minutes] = event.time.split(':').map(Number);
+            const newTime = new Date();
+            newTime.setHours(hours+3, minutes, 0, 0);
+            return newTime;
+        }
+        return new Date();
+    });
     const [type, setType] = useState(event ? event.type : '');
     const [comment, setComment] = useState(event ? event.comment : '');
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
-
+    console.log("here 23");
     const handleSaveEvent = async () => {
+        console.log("here 25");
         if (!type) {
             Alert.alert('Ошибка', 'Тип события обязателен.');
             return;
         }
-
+        console.log("here 30");
         const newEvent = {
             id: event ? event.id : Date.now().toString(),
             date: date.toISOString().split('T')[0], // Только дата
@@ -34,10 +47,11 @@ const EventFormScreen = ({ navigation, route }: { navigation: any; route: any })
             type,
             comment,
         };
-
+        console.log("38");
         const storedEvents = (await AsyncStorage.getItem('events')) || '[]';
         const parsedEvents = JSON.parse(storedEvents);
-
+        console.log("here 40");
+        console.log(event);
         if (event) {
             // Обновление события
             const updatedEvents = parsedEvents.map((ev: any) =>
@@ -54,7 +68,9 @@ const EventFormScreen = ({ navigation, route }: { navigation: any; route: any })
 
         navigation.goBack();
     };
-
+    console.log("here 62");
+    console.log("date", date);
+    console.log("dateToIs", date.toISOString().split('T')[0]);
     return (
         <View style={styles.container}>
             <Text style={styles.label}>Дата события:</Text>
