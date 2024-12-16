@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, Button, FlatList, TouchableOpacity, Alert } fro
 import { Calendar } from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {log} from "expo/build/devtools/logger"; // Подключаем иконки
 
 const HomeScreen = ({ navigation }: { navigation: any }) => {
     const [events, setEvents] = useState<any[]>([]);
@@ -62,7 +61,6 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
     };
 
     const handleEditEvent = (event: any) => {
-        console.log(selectedDate || new Date().toISOString().split('T')[0]);
         navigation.navigate('EventForm', {
             event,
             setEvents,
@@ -108,7 +106,6 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
             <Button
                 title="Добавить событие"
                 onPress={() => {
-                    console.log(selectedDate || new Date().toISOString().split('T')[0]);
                     navigation.navigate('EventForm', {
                         setEvents,
                         defaultDate: selectedDate || new Date().toISOString().split('T')[0],
